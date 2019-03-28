@@ -1,44 +1,49 @@
-import json
 import time
-from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
+import datetime
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
-###########################################################################################################################
-main_driver = webdriver.Chrome('C:\chromedriver.exe')
+startyear = int(input("請輸入起始西元年:"))
+startmonth = int(input("請輸入起始前一月:"))
+endyear = int(input("請輸入結束西元年:"))
+endmonth = int(input("請輸入結束月份:"))
+stocknumber = input("請輸入股票代碼:")
 
-boards = ['design','freebird','film','tech','art','leisure','citizen','local','sport','game','publish','traveling']
-dic = {}
-for board in boards:
-    title_list=[]
-    content_list=[]
-    count=0
-    for page in range(10,100):
-        main_driver.get('https://www.flyingv.cc/categories/' +board+ '/all?status=success'+'&page='+str(page))
-        time.sleep(2)
-        error=0
-        for x in range(12):
-            try:
-                tmp_title = main_driver.find_element_by_xpath('//*[@id="projects"]/div/div['+str(x+1)+']/div/div[3]/p[1]')
-                #tmp_title = main_driver.find_element_by_xpath('//*[@id="projects"]/div/div['+str(x+1)+']/div/div[2]/p[1]')
-                tmp_content = main_driver.find_element_by_xpath('//*[@id="projects"]/div/div['+str(x+1)+']/div/div[3]/p[3]')
-                percenrage = #募款比例
-                amount = #金額
-                title_list.append(tmp_title.get_attribute('innerHTML'))
-                content_list.append(tmp_content.get_attribute('innerHTML'))
-                print(title_list[count])
-                print(content_list[count])
-                print('\n')
-                count+=1
-                temp_dic = {'title':tmp_title, 'contemt':tmp_content, 'percentage':percentage, 'amount':amount}
-            except Exception as e:
-                print(str(e))
-                error+=1
-        if error>10:
+start = datetime.date(startyear, startmonth, 1)
+end = datetime.date(endyear, endmonth, 1)
+price = []
+day = []
+for month in range(100):
+    # print(month)
+    start = datetime.date(start.year + (start.month // 12), ((start.month % 12) + 1), 1)
+    if start.month < 10:
+        url = "http://www.twse.com.tw/exchangeReport/STOCK_DAY?response=csv&date=" + str(start.year) + "0" + str(start.month) + "01&stockNo=" + str(stocknumber)
+    else:
+        url = "http://www.twse.com.tw/exchangeReport/STOCK_DAY?response=csv&date=" + str(start.year) + str(start.month) + "01&stockNo=" + str(stocknumber)
+
+    time.sleep(3)
+    s = pd.read_csv(url, encoding="big5", header = 1, delimiter=',')
+    s.columns = ['date', 'shares', 'amount', 'open', 'high', 'low', 'close', 'change', 'turnover', '']
+    index = 0
+    for i in s["close"]:
+        if i >= 0:
+            price.append(i)
+            day.append(s["date"][index])
+            print(s["date"][index])
+            index += 1
+        else:    
             break
-    dic[board] = temp_dic
-    # with open(board+'.txt', 'w', encoding = 'utf8') as result:
-    #     result.write(board+'\n')
-    #     for article in range(len(title_list)):
-    #         result.write(title_list[article] + '\n' + content_list[article] +'\n')
-with open("data.json", 'w', encoding = "utf8") as result:
-    json.dump(dic, result)
+
+    if start == end:
+        break
+
+# print(price)
+# print(day)
+print("Done")
+
+plt.plot(day, price, '--o')
+plt.show()
+
+        
+
